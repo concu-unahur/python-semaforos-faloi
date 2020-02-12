@@ -19,21 +19,31 @@ class Computadora(threading.Thread):
     self.texto = texto
 
   def run(self):
-    # Tomo una impresora de la lista.
-    # (Esta línea va a fallar si no quedan impresoras, agregar sincronización para que no pase)
-    impresora = impresorasDisponibles.pop()
-    # La utilizo.
-    impresora.imprimir(self.texto)
-    # La vuelvo a dejar en la lista para que la use otro.
-    impresorasDisponibles.append(impresora)
+    semaphore.acquire()
+    try:
+      impresora = impresorasDisponibles.pop()
+      impresora.imprimir(self.texto)
+      impresorasDisponibles.append(impresora)
+    finally:
+      semaphore.release()
 
+    # El código de arriba es equivalente a este:
+    # with semaphore:
+    #   impresora = impresorasDisponibles.pop()
+    #   impresora.imprimir(self.texto)
+    #   impresorasDisponibles.append(impresora)
+
+cantidadMaxima = 3
 impresorasDisponibles = []
-for i in range(3):
+for i in range(cantidadMaxima):
   # Creo tres impresoras y las meto en la lista. Se puede cambiar el 3 por otro número para hacer pruebas.
   impresorasDisponibles.append(Impresora(i))
+
+semaphore = threading.Semaphore(cantidadMaxima)
 
 Computadora('hola').start()
 Computadora('qué tal').start()
 Computadora('todo bien').start()
-Computadora('esta explota').start()
-Computadora('esta también').start()
+Computadora('esta ya no explota').start()
+Computadora('esta tampoco').start()
+Computadora('ni esta otra').start()
